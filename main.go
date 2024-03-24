@@ -72,8 +72,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var entries []map[string]interface{}
-	err = json.Unmarshal(body, &entries)
+	var pLoad Payload
+	err = json.Unmarshal(body, &pLoad)
 	if err != nil {
 		log.Println("Error unmarshalling JSON:", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -92,7 +92,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		gnLogs []*pb.LogsTable
 	)
 
-	for _, entry := range entries {
+	for _, entry := range pLoad.Entries {
 		if entry["ev"] == "hb" {
 			hbRecord := hbLogging(entry, xAppEngineCountry)
 			bdRecord := bdLogging(entry, xAppEngineCountry)
