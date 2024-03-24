@@ -13,7 +13,7 @@ message LogsTable {
 	string unit = 6;
 	string unit_name = 7;
 	string details = 8;
-	string config_id = 9;
+	int64 config_id = 9;
 }
 
 message LogsHBTable {
