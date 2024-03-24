@@ -115,6 +115,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	log.Println("initializing managed writer new client")
 	ctx := context.Background()
 	client, err := managedwriter.NewClient(ctx, projectID)
 	if err != nil {
@@ -132,6 +133,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		gnLogsData = append(gnLogsData, b)
 	}
 
+	log.Println("calling saveRecords for gnLogs")
 	gn := &pb.LogsTable{}
 	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(gn.ProtoReflect().Descriptor()), datasetID, "logs", gnLogsData); err != nil {
 		log.Println("Error saving general logs:", err)
@@ -147,6 +149,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		gnLogsData = append(gnLogsData, b)
 	}
 
+	log.Println("calling saveRecords for fcLogs")
 	fc := &pb.LogsFCTable{}
 	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(fc.ProtoReflect().Descriptor()), datasetID, "logs_fc", fcLogsData); err != nil {
 		log.Println("Error saving fallback creative logs:", err)
@@ -162,6 +165,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		gnLogsData = append(gnLogsData, b)
 	}
 
+	log.Println("calling saveRecords for hbLogs")
 	hb := &pb.LogsHBTable{}
 	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(hb.ProtoReflect().Descriptor()), datasetID, "logs_hb", hbLogsData); err != nil {
 		log.Println("Error saving header bidding logs:", err)
@@ -177,6 +181,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		bdLogsData = append(bdLogsData, b)
 	}
 
+	log.Println("calling saveRecords for bdLogs")
 	bd := &pb.LogsBDTable{}
 	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(bd.ProtoReflect().Descriptor()), datasetID, "bid_data", bdLogsData); err != nil {
 		log.Println("Error saving bid data logs:", err)
@@ -229,13 +234,13 @@ func getIP(r *http.Request) string {
 }
 
 func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTable {
-	requiredVars := []string{"ev", "uid", "url"}
-	vars := enforceRequiredParams(requiredVars, entry)
-	if vars == nil {
+	requiredentry := []string{"ev", "uid", "url"}
+	allPresent := enforceRequiredParams(requiredentry, entry)
+	if !allPresent {
 		return nil
 	}
 
-	if _, ok := vars["uid"].(int64); !ok {
+	if _, ok := entry["uid"].(int64); !ok {
 		return nil
 	}
 
@@ -263,21 +268,21 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 		"vc":   "ag_video_click",
 		"vi":   "ag_video_impression",
 	}
-	event, ok := eventMap[vars["ev"].(string)]
+	event, ok := eventMap[entry["ev"].(string)]
 	if !ok {
 		return nil
 	}
 
 	row := &pb.LogsTable{
-		Uid:      vars["uid"].(int64),
+		Uid:      entry["uid"].(int64),
 		Datetime: logDate,
 		Hash:     hash,
-		Url:      vars["url"].(string),
+		Url:      entry["url"].(string),
 		Event:    event,
 	}
 
 	// Add optional fields here...
-	if unit, ok := vars["un"].(string); ok && unit != "" {
+	if unit, ok := entry["un"].(string); ok && unit != "" {
 		row.Unit = unit
 		parts := strings.Split(unit, "__")
 		if len(parts) > 1 {
@@ -285,36 +290,36 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 		}
 		row.UnitName = strings.Join(parts, "__")
 	}
-	if cid, ok := vars["cid"].(string); ok && cid != "" {
+	if cid, ok := entry["cid"].(string); ok && cid != "" {
 		row.ConfigId = cid
 	}
-	if dt, ok := vars["dt"].(string); ok && dt != "" {
+	if dt, ok := entry["dt"].(string); ok && dt != "" {
 		row.Details = dt
 	}
 	return row
 }
 
 func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable {
-	requiredVars := []string{"event", "uid", "url"}
-	vars := enforceRequiredParams(requiredVars, entry)
-	if vars == nil {
+	requiredentry := []string{"event", "uid", "url"}
+	allPresent := enforceRequiredParams(requiredentry, entry)
+	if !allPresent {
 		return nil
 	}
 
-	if _, ok := vars["uid"].(int64); !ok {
+	if _, ok := entry["uid"].(int64); !ok {
 		return nil
 	}
 
 	row := &pb.LogsTable{
-		Uid:      vars["uid"].(int64),
+		Uid:      entry["uid"].(int64),
 		Datetime: logDate,
 		Hash:     hash,
-		Url:      vars["url"].(string),
-		Event:    vars["event"].(string),
+		Url:      entry["url"].(string),
+		Event:    entry["event"].(string),
 	}
 
 	// Add optional fields here...
-	if unit, ok := vars["unit"].(string); ok && unit != "" {
+	if unit, ok := entry["unit"].(string); ok && unit != "" {
 		row.Unit = unit
 		parts := strings.Split(unit, "__")
 		if len(parts) > 1 {
@@ -322,19 +327,19 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 		}
 		row.UnitName = strings.Join(parts, "__")
 	}
-	if cid, ok := vars["config_id"].(string); ok && cid != "" {
+	if cid, ok := entry["config_id"].(string); ok && cid != "" {
 		row.ConfigId = cid
 	}
-	if dt, ok := vars["details"].(string); ok && dt != "" {
+	if dt, ok := entry["details"].(string); ok && dt != "" {
 		row.Details = dt
 	}
 	return row
 }
 
 func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
-	requiredVars := []string{"cid", "iid", "ty"}
-	vars := enforceRequiredParams(requiredVars, entry)
-	if vars == nil {
+	requiredentry := []string{"cid", "iid", "ty"}
+	allPresent := enforceRequiredParams(requiredentry, entry)
+	if !allPresent {
 		return nil
 	}
 
@@ -344,7 +349,7 @@ func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
 		"vi": "viewable_impression",
 		"ac": "click",
 	}
-	event, ok := eventMap[vars["ty"].(string)]
+	event, ok := eventMap[entry["ty"].(string)]
 	if !ok {
 		return nil
 	}
@@ -352,22 +357,22 @@ func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
 	return &pb.LogsHBTable{
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
-		IntegrationId: vars["iid"].(int64),
-		ConfigId:      vars["cid"].(int64),
-		Device:        vars["dv"].(string),
-		Geo:           vars["geo"].(string),
-		CreativeSize:  vars["cs"].(string),
-		Partner:       vars["ptn"].(string),
-		Revenue:       vars["rev"].(float64),
-		Currency:      vars["cur"].(string),
-		S2S:           vars["s2s"].(bool),
+		IntegrationId: entry["iid"].(int64),
+		ConfigId:      entry["cid"].(int64),
+		Device:        entry["dv"].(string),
+		Geo:           entry["geo"].(string),
+		CreativeSize:  entry["cs"].(string),
+		Partner:       entry["ptn"].(string),
+		Revenue:       entry["rev"].(float64),
+		Currency:      entry["cur"].(string),
+		S2S:           entry["s2s"].(bool),
 	}
 }
 
 func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
-	requiredVars := []string{"cid", "ty", "fid"}
-	vars := enforceRequiredParams(requiredVars, entry)
-	if vars == nil {
+	requiredentry := []string{"cid", "ty", "fid"}
+	allPresent := enforceRequiredParams(requiredentry, entry)
+	if !allPresent {
 		return nil
 	}
 
@@ -376,7 +381,7 @@ func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
 		"im": "impression",
 		"vi": "viewable_impression",
 	}
-	event, ok := eventMap[vars["ty"].(string)]
+	event, ok := eventMap[entry["ty"].(string)]
 	if !ok {
 		return nil
 	}
@@ -384,25 +389,25 @@ func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
 	return &pb.LogsFCTable{
 		Date:         time.Now().UTC().Format("2006-01-02"),
 		Event:        event,
-		ConfigId:     vars["cid"].(int64),
-		Device:       vars["dv"].(string),
-		Geo:          vars["geo"].(string),
-		CreativeSize: vars["cs"].(string),
-		CreativeId:   vars["fid"].(int64),
+		ConfigId:     entry["cid"].(int64),
+		Device:       entry["dv"].(string),
+		Geo:          entry["geo"].(string),
+		CreativeSize: entry["cs"].(string),
+		CreativeId:   entry["fid"].(int64),
 	}
 }
 
 func bdLogging(entry map[string]interface{}) *pb.LogsBDTable {
-	requiredVars := []string{"cid", "iid", "ty"}
-	vars := enforceRequiredParams(requiredVars, entry)
-	if vars == nil {
+	requiredentry := []string{"cid", "iid", "ty"}
+	allPresent := enforceRequiredParams(requiredentry, entry)
+	if !allPresent {
 		return nil
 	}
 
 	eventMap := map[string]string{
 		"bd": "bid",
 	}
-	event, ok := eventMap[vars["ty"].(string)]
+	event, ok := eventMap[entry["ty"].(string)]
 	if !ok {
 		return nil
 	}
@@ -410,26 +415,24 @@ func bdLogging(entry map[string]interface{}) *pb.LogsBDTable {
 	return &pb.LogsBDTable{
 		Timestamp:     time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
-		IntegrationId: vars["iid"].(int64),
-		ConfigId:      vars["cid"].(int64),
-		Device:        vars["dv"].(string),
-		Geo:           vars["geo"].(string),
-		CreativeSize:  vars["cs"].(string),
-		Partner:       vars["ptn"].(string),
-		Revenue:       vars["rev"].(float64),
-		Currency:      vars["cur"].(string),
-		S2S:           vars["s2s"].(bool),
+		IntegrationId: entry["iid"].(int64),
+		ConfigId:      entry["cid"].(int64),
+		Device:        entry["dv"].(string),
+		Geo:           entry["geo"].(string),
+		CreativeSize:  entry["cs"].(string),
+		Partner:       entry["ptn"].(string),
+		Revenue:       entry["rev"].(float64),
+		Currency:      entry["cur"].(string),
+		S2S:           entry["s2s"].(bool),
 	}
 }
 
-func enforceRequiredParams(requiredVars []string, fields map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
-	for _, v := range requiredVars {
+func enforceRequiredParams(requiredentry []string, fields map[string]interface{}) bool {
+	for _, v := range requiredentry {
 		val, ok := fields[v]
 		if !ok || val == nil || val == "" {
-			return nil
+			return false
 		}
-		result[v] = val
 	}
-	return result
+	return true
 }
