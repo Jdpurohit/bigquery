@@ -123,7 +123,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	defer client.Close()
 
-	// Now, send the test rows grouped into in a single append for gnLogs.
+	// ==>> LogsTable
+
 	var gnLogsData [][]byte
 	for k, mesg := range gnLogs {
 		b, err := proto.Marshal(mesg)
@@ -139,7 +140,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error saving general logs:", err)
 	}
 
-	// Now, send the test rows grouped into in a single append for fcLogs.
+	// ==>> LogsFCTable
+
 	var fcLogsData [][]byte
 	for k, mesg := range fcLogs {
 		b, err := proto.Marshal(mesg)
@@ -155,7 +157,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error saving fallback creative logs:", err)
 	}
 
-	// Now, send the test rows grouped into in a single append for hbLogs.
+	// ==>> LogsHBTable
+
 	var hbLogsData [][]byte
 	for k, mesg := range hbLogs {
 		b, err := proto.Marshal(mesg)
@@ -171,7 +174,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error saving header bidding logs:", err)
 	}
 
-	// Now, send the test rows grouped into in a single append.
+	// ==>> LogsBDTable
+
 	var bdLogsData [][]byte
 	for k, mesg := range bdLogs {
 		b, err := proto.Marshal(mesg)
@@ -198,14 +202,12 @@ func saveRecords(ctx context.Context, client *managedwriter.Client, dp *descript
 		managedwriter.WithSchemaDescriptor(dp),
 	)
 	if err != nil {
-		log.Println("saveRecords: NewManagedStream:", err)
-		return err
+		return fmt.Errorf("saveRecords: NewManagedStream: %v", err)
 	}
 
 	result, err := ms.AppendRows(ctx, rowsData)
 	if err != nil {
-		log.Println("saveRecords: grouped-row append failed:", err)
-		return err
+		return fmt.Errorf("saveRecords: grouped-row append failed: %v", err)
 	}
 
 	_, err = result.GetResult(ctx)
@@ -234,13 +236,20 @@ func getIP(r *http.Request) string {
 }
 
 func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTable {
-	requiredentry := []string{"ev", "uid", "url"}
-	allPresent := enforceRequiredParams(requiredentry, entry)
-	if !allPresent {
+	log.Println("gnLoggingV2 entry: ", entry)
+	jsonString, err := json.Marshal(entry)
+	if err != nil {
+		log.Printf("Unable to marshal JSON due to %s", err)
+		return nil
+	}
+	var target LogsTable
+	err = json.Unmarshal(jsonString, &target)
+	if err != nil {
+		log.Printf("Unable to unmarshal JSON due to %s", err)
 		return nil
 	}
 
-	if _, ok := entry["uid"].(int64); !ok {
+	if target.EV == "" || target.UId == 0 || target.URL == "" {
 		return nil
 	}
 
@@ -268,78 +277,96 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 		"vc":   "ag_video_click",
 		"vi":   "ag_video_impression",
 	}
-	event, ok := eventMap[entry["ev"].(string)]
+	event, ok := eventMap[target.EV]
 	if !ok {
 		return nil
 	}
 
 	row := &pb.LogsTable{
-		Uid:      entry["uid"].(int64),
+		Uid:      target.UId,
 		Datetime: logDate,
 		Hash:     hash,
-		Url:      entry["url"].(string),
+		Url:      target.URL,
 		Event:    event,
 	}
 
 	// Add optional fields here...
-	if unit, ok := entry["un"].(string); ok && unit != "" {
-		row.Unit = unit
-		parts := strings.Split(unit, "__")
+	if target.UN != "" {
+		row.Unit = target.UN
+		parts := strings.Split(target.UN, "__")
 		if len(parts) > 1 {
 			parts = parts[:len(parts)-1]
 		}
 		row.UnitName = strings.Join(parts, "__")
 	}
-	if cid, ok := entry["cid"].(string); ok && cid != "" {
-		row.ConfigId = cid
+	if target.CId != 0 {
+		row.ConfigId = target.CId
 	}
-	if dt, ok := entry["dt"].(string); ok && dt != "" {
-		row.Details = dt
+	if target.Dt != "" {
+		row.Details = target.Dt
 	}
 	return row
 }
 
 func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable {
-	requiredentry := []string{"event", "uid", "url"}
-	allPresent := enforceRequiredParams(requiredentry, entry)
-	if !allPresent {
+	log.Println("gnLogging entry: ", entry)
+	jsonString, err := json.Marshal(entry)
+	if err != nil {
+		log.Printf("Unable to marshal JSON due to %s", err)
+		return nil
+	}
+	var target LogsTable
+	err = json.Unmarshal(jsonString, &target)
+	if err != nil {
+		log.Printf("Unable to unmarshal JSON due to %s", err)
 		return nil
 	}
 
-	if _, ok := entry["uid"].(int64); !ok {
+	if target.Event == "" || target.UId == 0 || target.URL == "" {
 		return nil
 	}
 
 	row := &pb.LogsTable{
-		Uid:      entry["uid"].(int64),
+		Uid:      target.UId,
 		Datetime: logDate,
 		Hash:     hash,
-		Url:      entry["url"].(string),
-		Event:    entry["event"].(string),
+		Url:      target.URL,
+		Event:    target.Event,
 	}
 
 	// Add optional fields here...
-	if unit, ok := entry["unit"].(string); ok && unit != "" {
-		row.Unit = unit
-		parts := strings.Split(unit, "__")
+	if target.Unit != "" {
+		row.Unit = target.Unit
+		parts := strings.Split(target.Unit, "__")
 		if len(parts) > 1 {
 			parts = parts[:len(parts)-1]
 		}
 		row.UnitName = strings.Join(parts, "__")
 	}
-	if cid, ok := entry["config_id"].(string); ok && cid != "" {
-		row.ConfigId = cid
+	if target.ConfigId != 0 {
+		row.ConfigId = target.ConfigId
 	}
-	if dt, ok := entry["details"].(string); ok && dt != "" {
-		row.Details = dt
+	if target.Details != "" {
+		row.Details = target.Details
 	}
 	return row
 }
 
 func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
-	requiredentry := []string{"cid", "iid", "ty"}
-	allPresent := enforceRequiredParams(requiredentry, entry)
-	if !allPresent {
+	log.Println("hbLogging entry: ", entry)
+	jsonString, err := json.Marshal(entry)
+	if err != nil {
+		log.Printf("Unable to marshal JSON due to %s", err)
+		return nil
+	}
+	var target LogsHBTable
+	err = json.Unmarshal(jsonString, &target)
+	if err != nil {
+		log.Printf("Unable to unmarshal JSON due to %s", err)
+		return nil
+	}
+
+	if target.ConfigId == 0 || target.IntegrationId == 0 || target.TY == "" {
 		return nil
 	}
 
@@ -349,7 +376,7 @@ func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
 		"vi": "viewable_impression",
 		"ac": "click",
 	}
-	event, ok := eventMap[entry["ty"].(string)]
+	event, ok := eventMap[target.TY]
 	if !ok {
 		return nil
 	}
@@ -357,22 +384,33 @@ func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
 	return &pb.LogsHBTable{
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
-		IntegrationId: entry["iid"].(int64),
-		ConfigId:      entry["cid"].(int64),
-		Device:        entry["dv"].(string),
-		Geo:           entry["geo"].(string),
-		CreativeSize:  entry["cs"].(string),
-		Partner:       entry["ptn"].(string),
-		Revenue:       entry["rev"].(float64),
-		Currency:      entry["cur"].(string),
-		S2S:           entry["s2s"].(bool),
+		IntegrationId: target.IntegrationId,
+		ConfigId:      target.ConfigId,
+		Device:        target.Device,
+		Geo:           target.Geo,
+		CreativeSize:  target.CreativeSize,
+		Partner:       target.Partner,
+		Revenue:       target.Revenue,
+		Currency:      target.Currency,
+		S2S:           target.S2S,
 	}
 }
 
 func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
-	requiredentry := []string{"cid", "ty", "fid"}
-	allPresent := enforceRequiredParams(requiredentry, entry)
-	if !allPresent {
+	log.Println("fcLogging entry: ", entry)
+	jsonString, err := json.Marshal(entry)
+	if err != nil {
+		log.Printf("Unable to marshal JSON due to %s", err)
+		return nil
+	}
+	var target LogsFCTable
+	err = json.Unmarshal(jsonString, &target)
+	if err != nil {
+		log.Printf("Unable to unmarshal JSON due to %s", err)
+		return nil
+	}
+
+	if target.ConfigId == 0 || target.CreativeId == 0 || target.TY == "" {
 		return nil
 	}
 
@@ -381,33 +419,45 @@ func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
 		"im": "impression",
 		"vi": "viewable_impression",
 	}
-	event, ok := eventMap[entry["ty"].(string)]
+	event, ok := eventMap[target.TY]
 	if !ok {
 		return nil
 	}
+	// TODO: consider HTTP_X_APPENGINE_COUNTRY and 'unknown'
 
 	return &pb.LogsFCTable{
 		Date:         time.Now().UTC().Format("2006-01-02"),
 		Event:        event,
-		ConfigId:     entry["cid"].(int64),
-		Device:       entry["dv"].(string),
-		Geo:          entry["geo"].(string),
-		CreativeSize: entry["cs"].(string),
-		CreativeId:   entry["fid"].(int64),
+		ConfigId:     target.ConfigId,
+		Device:       target.Device,
+		Geo:          target.Geo,
+		CreativeSize: target.CreativeSize,
+		CreativeId:   target.CreativeId,
 	}
 }
 
 func bdLogging(entry map[string]interface{}) *pb.LogsBDTable {
-	requiredentry := []string{"cid", "iid", "ty"}
-	allPresent := enforceRequiredParams(requiredentry, entry)
-	if !allPresent {
+	log.Println("bdLogging entry: ", entry)
+	jsonString, err := json.Marshal(entry)
+	if err != nil {
+		log.Printf("Unable to marshal JSON due to %s", err)
+		return nil
+	}
+	var target LogsBDTable
+	err = json.Unmarshal(jsonString, &target)
+	if err != nil {
+		log.Printf("Unable to unmarshal JSON due to %s", err)
+		return nil
+	}
+
+	if target.ConfigId == 0 || target.IntegrationId == 0 || target.TY == "" {
 		return nil
 	}
 
 	eventMap := map[string]string{
 		"bd": "bid",
 	}
-	event, ok := eventMap[entry["ty"].(string)]
+	event, ok := eventMap[target.TY]
 	if !ok {
 		return nil
 	}
@@ -415,24 +465,14 @@ func bdLogging(entry map[string]interface{}) *pb.LogsBDTable {
 	return &pb.LogsBDTable{
 		Timestamp:     time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
-		IntegrationId: entry["iid"].(int64),
-		ConfigId:      entry["cid"].(int64),
-		Device:        entry["dv"].(string),
-		Geo:           entry["geo"].(string),
-		CreativeSize:  entry["cs"].(string),
-		Partner:       entry["ptn"].(string),
-		Revenue:       entry["rev"].(float64),
-		Currency:      entry["cur"].(string),
-		S2S:           entry["s2s"].(bool),
+		IntegrationId: target.IntegrationId,
+		ConfigId:      target.ConfigId,
+		Device:        target.Device,
+		Geo:           target.Geo,
+		CreativeSize:  target.CreativeSize,
+		Partner:       target.Partner,
+		Revenue:       target.Revenue,
+		Currency:      target.Currency,
+		S2S:           target.S2S,
 	}
-}
-
-func enforceRequiredParams(requiredentry []string, fields map[string]interface{}) bool {
-	for _, v := range requiredentry {
-		val, ok := fields[v]
-		if !ok || val == nil || val == "" {
-			return false
-		}
-	}
-	return true
 }
