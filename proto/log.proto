@@ -41,7 +41,7 @@ message LogsFCTable {
 }
 
 message LogsBDTable {
-	string timestamp = 1;
+	int64 timestamp = 1;
 	int64 integration_id = 2;
 	int64 config_id = 3;
 	string event = 4;

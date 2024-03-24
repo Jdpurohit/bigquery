@@ -508,7 +508,7 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 	}
 
 	return &pb.LogsBDTable{
-		Timestamp:     time.Now().UTC().Format("2006-01-02"),
+		Timestamp:     time.Now().Unix(),
 		Event:         event,
 		IntegrationId: target.IntegrationId,
 		ConfigId:      target.ConfigId,
