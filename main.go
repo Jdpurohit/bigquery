@@ -80,6 +80,11 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	xAppEngineCountry := "unknown"
+	if r.Header.Get("X-Appengine-Country") != "" {
+		xAppEngineCountry = r.Header.Get("X-Appengine-Country")
+	}
+
 	var (
 		bdLogs []*pb.LogsBDTable
 		hbLogs []*pb.LogsHBTable
@@ -89,8 +94,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 
 	for _, entry := range entries {
 		if entry["ev"] == "hb" {
-			hbRecord := hbLogging(entry)
-			bdRecord := bdLogging(entry)
+			hbRecord := hbLogging(entry, xAppEngineCountry)
+			bdRecord := bdLogging(entry, xAppEngineCountry)
 			if hbRecord != nil {
 				hbLogs = append(hbLogs, hbRecord)
 			}
@@ -98,7 +103,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 				bdLogs = append(bdLogs, bdRecord)
 			}
 		} else if entry["ev"] == "fc" {
-			fcRecord := fcLogging(entry)
+			fcRecord := fcLogging(entry, xAppEngineCountry)
 			if fcRecord != nil {
 				fcLogs = append(fcLogs, fcRecord)
 			}
@@ -148,7 +153,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("fcLogs: failed to marshal message %d: %v", k, err)
 		}
-		gnLogsData = append(gnLogsData, b)
+		fcLogsData = append(fcLogsData, b)
 	}
 
 	log.Println("calling saveRecords for fcLogs")
@@ -165,7 +170,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("hbLogs: failed to marshal message %d: %v", k, err)
 		}
-		gnLogsData = append(gnLogsData, b)
+		hbLogsData = append(hbLogsData, b)
 	}
 
 	log.Println("calling saveRecords for hbLogs")
@@ -223,6 +228,9 @@ func getHash(r *http.Request) string {
 }
 
 func getIP(r *http.Request) string {
+	if xUserIP := r.Header.Get("X-Appengine-User-IP"); xUserIP != "" {
+		return xUserIP
+	}
 	if xForwardedFor := r.Header.Get("X-Forwarded-For"); xForwardedFor != "" {
 		return strings.Split(xForwardedFor, ",")[0]
 	}
@@ -352,7 +360,7 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 	return row
 }
 
-func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
+func hbLogging(entry map[string]interface{}, country string) *pb.LogsHBTable {
 	log.Println("hbLogging entry: ", entry)
 	jsonString, err := json.Marshal(entry)
 	if err != nil {
@@ -381,22 +389,35 @@ func hbLogging(entry map[string]interface{}) *pb.LogsHBTable {
 		return nil
 	}
 
+	if target.Device == "" {
+		target.Device = "unknown"
+	}
+	if target.CreativeSize == "" {
+		target.CreativeSize = "unknown"
+	}
+	if target.Partner == "" {
+		target.Partner = "unknown"
+	}
+	if target.Currency == "" {
+		target.Currency = "unknown"
+	}
+
 	return &pb.LogsHBTable{
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
 		IntegrationId: target.IntegrationId,
 		ConfigId:      target.ConfigId,
 		Device:        target.Device,
-		Geo:           target.Geo,
+		Geo:           country,
 		CreativeSize:  target.CreativeSize,
 		Partner:       target.Partner,
-		Revenue:       target.Revenue,
+		Revenue:       target.Revenue, // null value?
 		Currency:      target.Currency,
-		S2S:           target.S2S,
+		S2S:           target.S2S, // null value?
 	}
 }
 
-func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
+func fcLogging(entry map[string]interface{}, country string) *pb.LogsFCTable {
 	log.Println("fcLogging entry: ", entry)
 	jsonString, err := json.Marshal(entry)
 	if err != nil {
@@ -423,20 +444,26 @@ func fcLogging(entry map[string]interface{}) *pb.LogsFCTable {
 	if !ok {
 		return nil
 	}
-	// TODO: consider HTTP_X_APPENGINE_COUNTRY and 'unknown'
+
+	if target.Device == "" {
+		target.Device = "unknown"
+	}
+	if target.CreativeSize == "" {
+		target.CreativeSize = "unknown"
+	}
 
 	return &pb.LogsFCTable{
 		Date:         time.Now().UTC().Format("2006-01-02"),
 		Event:        event,
 		ConfigId:     target.ConfigId,
 		Device:       target.Device,
-		Geo:          target.Geo,
+		Geo:          country,
 		CreativeSize: target.CreativeSize,
 		CreativeId:   target.CreativeId,
 	}
 }
 
-func bdLogging(entry map[string]interface{}) *pb.LogsBDTable {
+func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 	log.Println("bdLogging entry: ", entry)
 	jsonString, err := json.Marshal(entry)
 	if err != nil {
@@ -462,17 +489,30 @@ func bdLogging(entry map[string]interface{}) *pb.LogsBDTable {
 		return nil
 	}
 
+	if target.Device == "" {
+		target.Device = "unknown"
+	}
+	if target.CreativeSize == "" {
+		target.CreativeSize = "unknown"
+	}
+	if target.Partner == "" {
+		target.Partner = "unknown"
+	}
+	if target.Currency == "" {
+		target.Currency = "unknown"
+	}
+
 	return &pb.LogsBDTable{
 		Timestamp:     time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
 		IntegrationId: target.IntegrationId,
 		ConfigId:      target.ConfigId,
 		Device:        target.Device,
-		Geo:           target.Geo,
+		Geo:           country,
 		CreativeSize:  target.CreativeSize,
 		Partner:       target.Partner,
-		Revenue:       target.Revenue,
+		Revenue:       target.Revenue, // null value?
 		Currency:      target.Currency,
-		S2S:           target.S2S,
+		S2S:           target.S2S, // null value?
 	}
 }

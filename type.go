@@ -20,7 +20,6 @@ type LogsHBTable struct {
 	IntegrationId int64   `json:"iid,string"`
 	ConfigId      int64   `json:"cid,string"`
 	Device        string  `json:"dv"`
-	Geo           string  `json:"geo"`
 	CreativeSize  string  `json:"cs"`
 	Partner       string  `json:"ptn"`
 	Revenue       float64 `json:"rev,string"`
@@ -33,7 +32,6 @@ type LogsFCTable struct {
 	ConfigId     int64  `json:"cid,string"`
 	CreativeId   int64  `json:"fid,string"`
 	Device       string `json:"dv"`
-	Geo          string `json:"geo"`
 	CreativeSize string `json:"cs"`
 }
 
@@ -42,7 +40,6 @@ type LogsBDTable struct {
 	IntegrationId int64   `json:"iid,string"`
 	ConfigId      int64   `json:"cid,string"`
 	Device        string  `json:"dv"`
-	Geo           string  `json:"geo"`
 	CreativeSize  string  `json:"cs"`
 	Partner       string  `json:"ptn"`
 	Revenue       float64 `json:"rev,string"`
