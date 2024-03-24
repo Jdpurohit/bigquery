@@ -257,6 +257,7 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 		return nil
 	}
 
+	log.Println("gnLoggingV2 target: ", target)
 	if target.EV == "" || target.UId == 0 || target.URL == "" {
 		return nil
 	}
@@ -330,6 +331,7 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 		return nil
 	}
 
+	log.Println("gnLogging target: ", target)
 	if target.Event == "" || target.UId == 0 || target.URL == "" {
 		return nil
 	}
@@ -374,6 +376,7 @@ func hbLogging(entry map[string]interface{}, country string) *pb.LogsHBTable {
 		return nil
 	}
 
+	log.Println("hbLogging target: ", target)
 	if target.ConfigId == 0 || target.IntegrationId == 0 || target.TY == "" {
 		return nil
 	}
@@ -431,6 +434,7 @@ func fcLogging(entry map[string]interface{}, country string) *pb.LogsFCTable {
 		return nil
 	}
 
+	log.Println("fcLogging target: ", target)
 	if target.ConfigId == 0 || target.CreativeId == 0 || target.TY == "" {
 		return nil
 	}
@@ -477,6 +481,7 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 		return nil
 	}
 
+	log.Println("bdLogging target: ", target)
 	if target.ConfigId == 0 || target.IntegrationId == 0 || target.TY == "" {
 		return nil
 	}
