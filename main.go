@@ -216,6 +216,7 @@ func saveRecords(ctx context.Context, client *managedwriter.Client, dp *descript
 	if err != nil {
 		return fmt.Errorf("saveRecords: NewManagedStream: %v", err)
 	}
+	defer ms.Close()
 
 	result, err := ms.AppendRows(ctx, rowsData)
 	if err != nil {
