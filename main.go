@@ -139,10 +139,12 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		gnLogsData = append(gnLogsData, b)
 	}
 
-	log.Println("calling saveRecords for gnLogs")
-	gn := &pb.LogsTable{}
-	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(gn.ProtoReflect().Descriptor()), datasetID, "logs", gnLogsData); err != nil {
-		log.Println("Error saving general logs:", err)
+	if len(gnLogs) > 0 {
+		log.Println("calling saveRecords for gnLogs")
+		gn := &pb.LogsTable{}
+		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(gn.ProtoReflect().Descriptor()), datasetID, "logs", gnLogsData); err != nil {
+			log.Println("Error saving general logs:", err)
+		}
 	}
 
 	// ==>> LogsFCTable
@@ -156,10 +158,12 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		fcLogsData = append(fcLogsData, b)
 	}
 
-	log.Println("calling saveRecords for fcLogs")
-	fc := &pb.LogsFCTable{}
-	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(fc.ProtoReflect().Descriptor()), datasetID, "logs_fc", fcLogsData); err != nil {
-		log.Println("Error saving fallback creative logs:", err)
+	if len(fcLogs) > 0 {
+		log.Println("calling saveRecords for fcLogs")
+		fc := &pb.LogsFCTable{}
+		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(fc.ProtoReflect().Descriptor()), datasetID, "logs_fc", fcLogsData); err != nil {
+			log.Println("Error saving fallback creative logs:", err)
+		}
 	}
 
 	// ==>> LogsHBTable
@@ -173,10 +177,12 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		hbLogsData = append(hbLogsData, b)
 	}
 
-	log.Println("calling saveRecords for hbLogs")
-	hb := &pb.LogsHBTable{}
-	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(hb.ProtoReflect().Descriptor()), datasetID, "logs_hb", hbLogsData); err != nil {
-		log.Println("Error saving header bidding logs:", err)
+	if len(hbLogs) > 0 {
+		log.Println("calling saveRecords for hbLogs")
+		hb := &pb.LogsHBTable{}
+		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(hb.ProtoReflect().Descriptor()), datasetID, "logs_hb", hbLogsData); err != nil {
+			log.Println("Error saving header bidding logs:", err)
+		}
 	}
 
 	// ==>> LogsBDTable
@@ -190,12 +196,13 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		bdLogsData = append(bdLogsData, b)
 	}
 
-	log.Println("calling saveRecords for bdLogs")
-	bd := &pb.LogsBDTable{}
-	if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(bd.ProtoReflect().Descriptor()), datasetID, "bid_data", bdLogsData); err != nil {
-		log.Println("Error saving bid data logs:", err)
+	if len(bdLogs) > 0 {
+		log.Println("calling saveRecords for bdLogs")
+		bd := &pb.LogsBDTable{}
+		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(bd.ProtoReflect().Descriptor()), datasetID, "bid_data", bdLogsData); err != nil {
+			log.Println("Error saving bid data logs:", err)
+		}
 	}
-
 	fmt.Fprint(w, "")
 }
 
