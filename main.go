@@ -265,7 +265,15 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 	}
 
 	log.Println("gnLoggingV2 target: ", target)
-	if target.EV == "" || target.UId == 0 || target.URL == "" {
+	uid, err := target.UId.Int64()
+	if err != nil {
+		return nil
+	}
+	cid, err := target.CId.Int64()
+	if err != nil {
+		return nil
+	}
+	if uid == 0 || target.URL == "" || target.EV == "" {
 		return nil
 	}
 
@@ -299,7 +307,7 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 	}
 
 	row := &pb.LogsTable{
-		Uid:      target.UId,
+		Uid:      uid,
 		Datetime: logDate,
 		Hash:     hash,
 		Url:      target.URL,
@@ -315,8 +323,8 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 		}
 		row.UnitName = strings.Join(parts, "__")
 	}
-	if target.CId != 0 {
-		row.ConfigId = target.CId
+	if cid != 0 {
+		row.ConfigId = cid
 	}
 	if target.Dt != "" {
 		row.Details = target.Dt
@@ -339,12 +347,20 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 	}
 
 	log.Println("gnLogging target: ", target)
-	if target.Event == "" || target.UId == 0 || target.URL == "" {
+	uid, err := target.UId.Int64()
+	if err != nil {
+		return nil
+	}
+	cid, err := target.ConfigId.Int64()
+	if err != nil {
+		return nil
+	}
+	if uid == 0 || target.URL == "" || target.Event == "" {
 		return nil
 	}
 
 	row := &pb.LogsTable{
-		Uid:      target.UId,
+		Uid:      uid,
 		Datetime: logDate,
 		Hash:     hash,
 		Url:      target.URL,
@@ -360,8 +376,8 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 		}
 		row.UnitName = strings.Join(parts, "__")
 	}
-	if target.ConfigId != 0 {
-		row.ConfigId = target.ConfigId
+	if cid != 0 {
+		row.ConfigId = cid
 	}
 	if target.Details != "" {
 		row.Details = target.Details
@@ -382,9 +398,21 @@ func hbLogging(entry map[string]interface{}, country string) *pb.LogsHBTable {
 		log.Printf("Unable to unmarshal JSON due to %s", err)
 		return nil
 	}
-
 	log.Println("hbLogging target: ", target)
-	if target.ConfigId == 0 || target.IntegrationId == 0 || target.TY == "" {
+
+	iid, err := target.IntegrationId.Int64()
+	if err != nil {
+		return nil
+	}
+	cid, err := target.ConfigId.Int64()
+	if err != nil {
+		return nil
+	}
+	rev, err := target.Revenue.Float64()
+	if err != nil {
+		return nil
+	}
+	if cid == 0 || iid == 0 || target.TY == "" {
 		return nil
 	}
 
@@ -411,19 +439,18 @@ func hbLogging(entry map[string]interface{}, country string) *pb.LogsHBTable {
 	if target.Currency == "" {
 		target.Currency = "unknown"
 	}
-
 	return &pb.LogsHBTable{
 		Date:          time.Now().UTC().Format("2006-01-02"),
 		Event:         event,
-		IntegrationId: target.IntegrationId,
-		ConfigId:      target.ConfigId,
+		IntegrationId: iid,
+		ConfigId:      cid,
 		Device:        target.Device,
 		Geo:           country,
 		CreativeSize:  target.CreativeSize,
 		Partner:       target.Partner,
-		Revenue:       target.Revenue, // null value?
+		Revenue:       rev,
 		Currency:      target.Currency,
-		S2S:           target.S2S, // null value?
+		S2S:           target.S2S,
 	}
 }
 
@@ -442,7 +469,15 @@ func fcLogging(entry map[string]interface{}, country string) *pb.LogsFCTable {
 	}
 
 	log.Println("fcLogging target: ", target)
-	if target.ConfigId == 0 || target.CreativeId == 0 || target.TY == "" {
+	creativeId, err := target.CreativeId.Int64()
+	if err != nil {
+		return nil
+	}
+	cid, err := target.ConfigId.Int64()
+	if err != nil {
+		return nil
+	}
+	if cid == 0 || creativeId == 0 || target.TY == "" {
 		return nil
 	}
 
@@ -466,11 +501,11 @@ func fcLogging(entry map[string]interface{}, country string) *pb.LogsFCTable {
 	return &pb.LogsFCTable{
 		Date:         time.Now().UTC().Format("2006-01-02"),
 		Event:        event,
-		ConfigId:     target.ConfigId,
+		ConfigId:     cid,
 		Device:       target.Device,
 		Geo:          country,
 		CreativeSize: target.CreativeSize,
-		CreativeId:   target.CreativeId,
+		CreativeId:   creativeId,
 	}
 }
 
@@ -487,9 +522,20 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 		log.Printf("Unable to unmarshal JSON due to %s", err)
 		return nil
 	}
-
 	log.Println("bdLogging target: ", target)
-	if target.ConfigId == 0 || target.IntegrationId == 0 || target.TY == "" {
+	iid, err := target.IntegrationId.Int64()
+	if err != nil {
+		return nil
+	}
+	cid, err := target.ConfigId.Int64()
+	if err != nil {
+		return nil
+	}
+	rev, err := target.Revenue.Float64()
+	if err != nil {
+		return nil
+	}
+	if cid == 0 || iid == 0 || target.TY == "" {
 		return nil
 	}
 
@@ -517,14 +563,14 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 	return &pb.LogsBDTable{
 		Timestamp:     time.Now().Unix(),
 		Event:         event,
-		IntegrationId: target.IntegrationId,
-		ConfigId:      target.ConfigId,
+		IntegrationId: iid,
+		ConfigId:      cid,
 		Device:        target.Device,
 		Geo:           country,
 		CreativeSize:  target.CreativeSize,
 		Partner:       target.Partner,
-		Revenue:       target.Revenue, // null value?
+		Revenue:       rev,
 		Currency:      target.Currency,
-		S2S:           target.S2S, // null value?
+		S2S:           target.S2S,
 	}
 }

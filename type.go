@@ -6,50 +6,50 @@ import (
 )
 
 type LogsTable struct {
-	UId      int64  `json:"uid,string"`
-	URL      string `json:"url"`
-	Event    string `json:"event"`
-	Unit     string `json:"unit"`
-	ConfigId int64  `json:"config_id,string"`
-	Details  string `json:"details"`
+	UId      json.Number `json:"uid"`
+	URL      string      `json:"url"`
+	Event    string      `json:"event"`
+	Unit     string      `json:"unit"`
+	ConfigId json.Number `json:"config_id"`
+	Details  string      `json:"details"`
 
 	// below parameter are expect in general log v2 only
-	EV  string `json:"ev"`
-	UN  string `json:"un"`
-	CId int64  `json:"cid,string"`
-	Dt  string `json:"dt"`
+	EV  string      `json:"ev"`
+	UN  string      `json:"un"`
+	CId json.Number `json:"cid"`
+	Dt  string      `json:"dt"`
 }
 
 type LogsHBTable struct {
-	TY            string  `json:"ty"`
-	IntegrationId int64   `json:"iid,string"`
-	ConfigId      int64   `json:"cid,string"`
-	Device        string  `json:"dv"`
-	CreativeSize  string  `json:"cs"`
-	Partner       string  `json:"ptn"`
-	Revenue       float64 `json:"rev,string"`
-	Currency      string  `json:"cur"`
-	S2S           bool    `json:"s2s"`
+	TY            string      `json:"ty"`
+	IntegrationId json.Number `json:"iid"`
+	ConfigId      json.Number `json:"cid"`
+	Device        string      `json:"dv"`
+	CreativeSize  string      `json:"cs"`
+	Partner       string      `json:"ptn"`
+	Revenue       json.Number `json:"rev"`
+	Currency      string      `json:"cur"`
+	S2S           bool        `json:"s2s"`
 }
 
 type LogsFCTable struct {
-	TY           string `json:"ty"`
-	ConfigId     int64  `json:"cid,string"`
-	CreativeId   int64  `json:"fid,string"`
-	Device       string `json:"dv"`
-	CreativeSize string `json:"cs"`
+	TY           string      `json:"ty"`
+	ConfigId     json.Number `json:"cid"`
+	CreativeId   json.Number `json:"fid"`
+	Device       string      `json:"dv"`
+	CreativeSize string      `json:"cs"`
 }
 
 type LogsBDTable struct {
-	TY            string  `json:"ty"`
-	IntegrationId int64   `json:"iid,string"`
-	ConfigId      int64   `json:"cid,string"`
-	Device        string  `json:"dv"`
-	CreativeSize  string  `json:"cs"`
-	Partner       string  `json:"ptn"`
-	Revenue       float64 `json:"rev,string"`
-	Currency      string  `json:"cur"`
-	S2S           bool    `json:"s2s"`
+	TY            string      `json:"ty"`
+	IntegrationId json.Number `json:"iid"`
+	ConfigId      json.Number `json:"cid"`
+	Device        string      `json:"dv"`
+	CreativeSize  string      `json:"cs"`
+	Partner       string      `json:"ptn"`
+	Revenue       json.Number `json:"rev"`
+	Currency      string      `json:"cur"`
+	S2S           bool        `json:"s2s"`
 }
 
 type Payload struct {
