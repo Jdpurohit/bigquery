@@ -223,6 +223,12 @@ func saveRecords(ctx context.Context, client *managedwriter.Client, dp *descript
 		return fmt.Errorf("saveRecords: grouped-row append failed: %v", err)
 	}
 
+	res, err := result.FullResponse(ctx)
+	if err != nil {
+		return fmt.Errorf("saveRecords: FullResponse error: %v", err)
+	}
+	log.Printf("saveRecords: FullResponse: %v", res)
+
 	_, err = result.GetResult(ctx)
 	return err
 }
