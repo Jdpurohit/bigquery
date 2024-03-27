@@ -140,7 +140,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(gnLogs) > 0 {
-		log.Println("calling saveRecords for gnLogs")
+		log.Printf("pushing %d records to gnLogs table", len(gnLogs))
 		gn := &pb.LogsTable{}
 		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(gn.ProtoReflect().Descriptor()), datasetID, "logs", gnLogsData); err != nil {
 			log.Println("Error saving general logs:", err)
@@ -159,7 +159,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(fcLogs) > 0 {
-		log.Println("calling saveRecords for fcLogs")
+		log.Printf("pushing %d records to fcLogs table", len(fcLogs))
 		fc := &pb.LogsFCTable{}
 		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(fc.ProtoReflect().Descriptor()), datasetID, "logs_fc", fcLogsData); err != nil {
 			log.Println("Error saving fallback creative logs:", err)
@@ -178,7 +178,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(hbLogs) > 0 {
-		log.Println("calling saveRecords for hbLogs")
+		log.Printf("pushing %d records to hbLogs table", len(hbLogs))
 		hb := &pb.LogsHBTable{}
 		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(hb.ProtoReflect().Descriptor()), datasetID, "logs_hb", hbLogsData); err != nil {
 			log.Println("Error saving header bidding logs:", err)
@@ -197,7 +197,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(bdLogs) > 0 {
-		log.Println("calling saveRecords for bdLogs")
+		log.Printf("pushing %d records to bdLogs table", len(bdLogs))
 		bd := &pb.LogsBDTable{}
 		if err := saveRecords(ctx, client, protodesc.ToDescriptorProto(bd.ProtoReflect().Descriptor()), datasetID, "bid_data", bdLogsData); err != nil {
 			log.Println("Error saving bid data logs:", err)
@@ -276,10 +276,7 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 	if err != nil {
 		return nil
 	}
-	cid, err := target.CId.Int64()
-	if err != nil {
-		return nil
-	}
+	cid, _ := target.CId.Int64() // non-mandatory field
 	if uid == 0 || target.URL == "" || target.EV == "" {
 		return nil
 	}
@@ -358,10 +355,7 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 	if err != nil {
 		return nil
 	}
-	cid, err := target.ConfigId.Int64()
-	if err != nil {
-		return nil
-	}
+	cid, _ := target.ConfigId.Int64() // non-mandatory field
 	if uid == 0 || target.URL == "" || target.Event == "" {
 		return nil
 	}
@@ -415,10 +409,7 @@ func hbLogging(entry map[string]interface{}, country string) *pb.LogsHBTable {
 	if err != nil {
 		return nil
 	}
-	rev, err := target.Revenue.Float64()
-	if err != nil {
-		return nil
-	}
+	rev, _ := target.Revenue.Float64() // non-mandatory field
 	if cid == 0 || iid == 0 || target.TY == "" {
 		return nil
 	}
@@ -538,10 +529,7 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 	if err != nil {
 		return nil
 	}
-	rev, err := target.Revenue.Float64()
-	if err != nil {
-		return nil
-	}
+	rev, _ := target.Revenue.Float64() // non-mandatory field
 	if cid == 0 || iid == 0 || target.TY == "" {
 		return nil
 	}
@@ -568,7 +556,7 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 	}
 
 	return &pb.LogsBDTable{
-		Timestamp:     time.Now().Unix(),
+		Timestamp:     time.Now().UnixMicro(),
 		Event:         event,
 		IntegrationId: iid,
 		ConfigId:      cid,
