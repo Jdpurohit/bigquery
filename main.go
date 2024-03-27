@@ -227,7 +227,7 @@ func saveRecords(ctx context.Context, client *managedwriter.Client, dp *descript
 	if err != nil {
 		return fmt.Errorf("saveRecords: FullResponse error: %v", err)
 	}
-	log.Printf("saveRecords: FullResponse: %v", res)
+	log.Printf("saveRecords: Row Wise Error: %v", res.GetRowErrors())
 
 	_, err = result.GetResult(ctx)
 	return err
