@@ -1,55 +1,55 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package bigquery;
 
 option go_package = "./pb";
 
 message LogsTable {
-	string datetime = 1;
- 	int64 uid = 2;
-	string hash = 3;
-	string url = 4;
-	string event = 5;
-	string unit = 6;
-	string unit_name = 7;
-	string details = 8;
-	int64 config_id = 9;
+	required string datetime = 1;
+ 	required int64 uid = 2;
+	required string hash = 3;
+	required string url = 4;
+	required string event = 5;
+	optional string unit = 6;
+	optional string unit_name = 7;
+	optional string details = 8;
+	optional int64 config_id = 9;
 }
 
 message LogsHBTable {
-	string date = 1;
-	string event = 2;
-	int64 config_id = 3;
-	string device = 4;
-	string geo = 5;
-	string creative_size = 6;
-	string partner = 7;
-	double revenue = 8;
-	string currency = 9;
-	int64 integration_id = 10;
-	bool s2s = 11;
+	required string date = 1;
+	required string event = 2;
+	required int64 config_id = 3;
+	optional string device = 4;
+	optional string geo = 5;
+	optional string creative_size = 6;
+	optional string partner = 7;
+	optional double revenue = 8;
+	optional string currency = 9;
+	optional int64 integration_id = 10;
+	optional bool s2s = 11;
 }
 
 message LogsFCTable {
-	string date = 1;
-	int64 config_id = 2;
-	string geo = 3;
-	string device= 4;
-	string creative_size = 5;
-	string event = 6;
-	int64 creative_id = 7;
+	required string date = 1;
+	required int64 config_id = 2;
+	required string geo = 3;
+	required string device= 4;
+	optional string creative_size = 5;
+	required string event = 6;
+	required int64 creative_id = 7;
 }
 
 message LogsBDTable {
-	int64 timestamp = 1;
-	int64 integration_id = 2;
-	int64 config_id = 3;
-	string event = 4;
-	string partner = 5;
-	string device = 6;
-	string geo = 7;
-	string creative_size = 8;
-	double revenue = 9;
-	string currency = 10;
-	bool s2s = 11;
+	required int64 timestamp = 1;
+	required int64 integration_id = 2;
+	required int64 config_id = 3;
+	required string event = 4;
+	required string partner = 5;
+	optional string device = 6;
+	optional string geo = 7;
+	optional string creative_size = 8;
+	optional double revenue = 9;
+	optional string currency = 10;
+	optional bool s2s = 11;
 }

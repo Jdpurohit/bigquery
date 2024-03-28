@@ -311,27 +311,28 @@ func gnLoggingV2(entry map[string]interface{}, logDate, hash string) *pb.LogsTab
 	}
 
 	row := &pb.LogsTable{
-		Uid:      uid,
-		Datetime: logDate,
-		Hash:     hash,
-		Url:      target.URL,
-		Event:    event,
+		Uid:      &uid,
+		Datetime: &logDate,
+		Hash:     &hash,
+		Url:      &target.URL,
+		Event:    &event,
 	}
 
 	// Add optional fields here...
 	if target.UN != "" {
-		row.Unit = target.UN
+		row.Unit = &target.UN
 		parts := strings.Split(target.UN, "__")
 		if len(parts) > 1 {
 			parts = parts[:len(parts)-1]
 		}
-		row.UnitName = strings.Join(parts, "__")
+		uname := strings.Join(parts, "__")
+		row.UnitName = &uname
 	}
 	if cid != 0 {
-		row.ConfigId = cid
+		row.ConfigId = &cid
 	}
 	if target.Dt != "" {
-		row.Details = target.Dt
+		row.Details = &target.Dt
 	}
 	return row
 }
@@ -361,27 +362,28 @@ func gnLogging(entry map[string]interface{}, logDate, hash string) *pb.LogsTable
 	}
 
 	row := &pb.LogsTable{
-		Uid:      uid,
-		Datetime: logDate,
-		Hash:     hash,
-		Url:      target.URL,
-		Event:    target.Event,
+		Uid:      &uid,
+		Datetime: &logDate,
+		Hash:     &hash,
+		Url:      &target.URL,
+		Event:    &target.Event,
 	}
 
 	// Add optional fields here...
 	if target.Unit != "" {
-		row.Unit = target.Unit
+		row.Unit = &target.Unit
 		parts := strings.Split(target.Unit, "__")
 		if len(parts) > 1 {
 			parts = parts[:len(parts)-1]
 		}
-		row.UnitName = strings.Join(parts, "__")
+		uname := strings.Join(parts, "__")
+		row.UnitName = &uname
 	}
 	if cid != 0 {
-		row.ConfigId = cid
+		row.ConfigId = &cid
 	}
 	if target.Details != "" {
-		row.Details = target.Details
+		row.Details = &target.Details
 	}
 	return row
 }
@@ -437,19 +439,23 @@ func hbLogging(entry map[string]interface{}, country string) *pb.LogsHBTable {
 	if target.Currency == "" {
 		target.Currency = "unknown"
 	}
-	return &pb.LogsHBTable{
-		Date:          time.Now().UTC().Format("2006-01-02"),
-		Event:         event,
-		IntegrationId: iid,
-		ConfigId:      cid,
-		Device:        target.Device,
-		Geo:           country,
-		CreativeSize:  target.CreativeSize,
-		Partner:       target.Partner,
-		Revenue:       rev,
-		Currency:      target.Currency,
-		S2S:           target.S2S,
+	t := time.Now().UTC().Format("2006-01-02")
+	rows := &pb.LogsHBTable{
+		Date:          &t,
+		Event:         &event,
+		IntegrationId: &iid,
+		ConfigId:      &cid,
+		Device:        &target.Device,
+		Geo:           &country,
+		CreativeSize:  &target.CreativeSize,
+		Partner:       &target.Partner,
+		Revenue:       &rev,
+		Currency:      &target.Currency,
 	}
+	if target.S2S != nil {
+		rows.S2S = target.S2S
+	}
+	return rows
 }
 
 func fcLogging(entry map[string]interface{}, country string) *pb.LogsFCTable {
@@ -495,15 +501,15 @@ func fcLogging(entry map[string]interface{}, country string) *pb.LogsFCTable {
 	if target.CreativeSize == "" {
 		target.CreativeSize = "unknown"
 	}
-
+	t := time.Now().UTC().Format("2006-01-02")
 	return &pb.LogsFCTable{
-		Date:         time.Now().UTC().Format("2006-01-02"),
-		Event:        event,
-		ConfigId:     cid,
-		Device:       target.Device,
-		Geo:          country,
-		CreativeSize: target.CreativeSize,
-		CreativeId:   creativeId,
+		Date:         &t,
+		Event:        &event,
+		ConfigId:     &cid,
+		Device:       &target.Device,
+		Geo:          &country,
+		CreativeSize: &target.CreativeSize,
+		CreativeId:   &creativeId,
 	}
 }
 
@@ -554,18 +560,21 @@ func bdLogging(entry map[string]interface{}, country string) *pb.LogsBDTable {
 	if target.Currency == "" {
 		target.Currency = "unknown"
 	}
-
-	return &pb.LogsBDTable{
-		Timestamp:     time.Now().UnixMicro(),
-		Event:         event,
-		IntegrationId: iid,
-		ConfigId:      cid,
-		Device:        target.Device,
-		Geo:           country,
-		CreativeSize:  target.CreativeSize,
-		Partner:       target.Partner,
-		Revenue:       rev,
-		Currency:      target.Currency,
-		S2S:           target.S2S,
+	t := time.Now().UnixMicro()
+	row := &pb.LogsBDTable{
+		Timestamp:     &t,
+		Event:         &event,
+		IntegrationId: &iid,
+		ConfigId:      &cid,
+		Device:        &target.Device,
+		Geo:           &country,
+		CreativeSize:  &target.CreativeSize,
+		Partner:       &target.Partner,
+		Revenue:       &rev,
+		Currency:      &target.Currency,
 	}
+	if target.S2S != nil {
+		row.S2S = target.S2S
+	}
+	return row
 }

@@ -29,7 +29,7 @@ type LogsHBTable struct {
 	Partner       string      `json:"ptn"`
 	Revenue       json.Number `json:"rev"`
 	Currency      string      `json:"cur"`
-	S2S           bool        `json:"s2s"`
+	S2S           *bool       `json:"s2s"`
 }
 
 type LogsFCTable struct {
@@ -49,7 +49,7 @@ type LogsBDTable struct {
 	Partner       string      `json:"ptn"`
 	Revenue       json.Number `json:"rev"`
 	Currency      string      `json:"cur"`
-	S2S           bool        `json:"s2s"`
+	S2S           *bool       `json:"s2s"`
 }
 
 type Payload struct {
